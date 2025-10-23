@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>モールス信号変換ツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            padding: 0;
+            background-image: url("https://t4.ftcdn.net/jpg/03/62/15/61/360_F_362156188_yZFBruW2nRClI9Dm4zmokdXsgrMKx11m.jpg");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .header2 {
+            margin-top: 20px;
+            font-size: 48px;
+            color: #555;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            padding: 10px;
+        }
+        .header2 img {
+            width: 125px;
+            height: 100px;
+            margin-right: 30px;
+        }
+        label, input, textarea, button {
+            display: block;
+            margin-bottom: 10px;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            background-color: rgba(255, 255, 255, 0.4);
+            color: #000;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #inputText, #result {
+            font-size: 23px;
+        }
+        .footer {
+            margin-top: 50px;
+            font-size: 22px;
+            color: #383737;
+            text-align: center;
+        }
+        .Links {
+            margin-top: 20px;
+            font-size: 24px;
+            color: #1b1b1b;
+            text-align: center;
+        }
+        .footerLinks {
+            margin-top: 10px;
+            font-size: 18px;
+            color: #16369c;
+            text-align: center;
+        }
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .toggle-label {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <div class="header2">
+        <img src="https://forum.playhive.com/uploads/default/original/1X/0d05e3240037f7592a0f16b11b57c08eba76f19c.png" alt="Logo">
+        モールス信号変換ツール
+    </div>
+
+    <div class="toggle-container">
+        <span class="toggle-label">アルファベット → モールス</span>
+        <label class="switch">
+            <input type="checkbox" id="modeToggle" checked>
+            <span class="slider"></span>
+        </label>
+        <span class="toggle-label">モールス → アルファベット</span>
+    </div>
+
+    <form id="replaceForm">
+        <label for="inputText" id="inputLabel">モールス信号:</label>
+        <textarea id="inputText" placeholder="ここにモールス信号を入力してください"></textarea>
+
+        <button type="button" onclick="convert()">変換</button>
+    </form>
+
+    <h2>結果:</h2>
+    <textarea id="result" readonly></textarea>
+    <button type="button" onclick="copyResult()">コピーする</button>
+    <button type="button" onclick="clearTexts()">クリア</button>
+    <div class="Links">
+        このツールはアルファベット、数字、一部の記号とモールス信号を相互変換します。<br>
+        モールス信号では「・」「-」「.」「_」「0」「1」「2」などの文字を認識します。<br>
+        対応文字: A-Z, 0-9, . , ? /
+    </div>
+    <div class="footer">
+        @Created by Yytanuki
+    </div>
+    <div class="footerLinks">
+        <a href="https://x.com/TanukiYy">X(旧Twitter)</a>
+        　
+        <a href="https://youtube.com/@Yytanuki">YouTube</a>
+    </div>
+
+    <script>
+        // モールス信号変換テーブル
+        const morseCodeTable = {
+            'A': '・ー',
+            'B': 'ー・・・',
+            'C': 'ー・ー・',
+            'D': 'ー・・',
+            'E': '・',
+            'F': '・・ー・',
+            'G': 'ーー・',
+            'H': '・・・・',
+            'I': '・・',
+            'J': 'ー・ーー',
+            'K': 'ー・ー',
+            'L': '・ー・・',
+            'M': 'ーー',
+            'N': 'ー・',
+            'O': 'ーーー',
+            'P': '・ーー・',
+            'Q': 'ーー・ー',
+            'R': '・ー・',
+            'S': '・・・',
+            'T': 'ー',
+            'U': '・・ー',
+            'V': '・・・ー',
+            'W': '・ーー',
+            'X': 'ー・・ー',
+            'Y': 'ー・ーー',
+            'Z': 'ーー・・',
+            '1': '・ーーーー',
+            '2': '・・ーーー',
+            '3': '・・・ーー',
+            '4': '・・・・ー',
+            '5': '・・・・・',
+            '6': 'ー・・・・',
+            '7': 'ーー・・・',
+            '8': 'ーーー・・',
+            '9': 'ーーーー・',
+            '0': 'ーーーーー',
+            '.': '・ー・ー・ー',
+            ',': 'ーー・・ーー',
+            '?': '・・ーー・・',
+            '/': 'ー・・ー・',
+            ' ': ' '
+        };
+
+        // 逆引き用のテーブルを作成
+        const reverseMorseTable = {};
+        for (const [key, value] of Object.entries(morseCodeTable)) {
+            if (key !== ' ') {
+                reverseMorseTable[value] = key;
+            }
+        }
+
+        // モード切り替えの処理
+        document.getElementById('modeToggle').addEventListener('change', function() {
+            const isMorseToText = this.checked;
+            const inputLabel = document.getElementById('inputLabel');
+            const inputText = document.getElementById('inputText');
+            
+            if (isMorseToText) {
+                inputLabel.textContent = 'モールス信号:';
+                inputText.placeholder = 'ここにモールス信号を入力してください';
+            } else {
+                inputLabel.textContent = '入力する文:';
+                inputText.placeholder = 'ここに文を入力してください';
+            }
+        });
+
+        function convert() {
+            const isMorseToText = document.getElementById('modeToggle').checked;
+            
+            if (isMorseToText) {
+                convertMorseToText();
+            } else {
+                convertTextToMorse();
+            }
+        }
+
+        function convertTextToMorse() {
+            // 入力値を取得
+            const inputText = document.getElementById("inputText").value.toUpperCase();
+
+            // エラーチェック
+            if (!inputText) {
+                alert("文を入力してください。");
+                return;
+            }
+
+            // 変換を実行
+            let result = '';
+            for (let i = 0; i < inputText.length; i++) {
+                const char = inputText[i];
+                if (morseCodeTable[char] !== undefined) {
+                    result += morseCodeTable[char] + ' ';
+                } else if (char === ' ') {
+                    result += ' / ';
+                } else {
+                    result += char + ' ';
+                }
+            }
+
+            // 結果を表示
+            document.getElementById("result").value = result.trim();
+        }
+
+        function convertMorseToText() {
+            // 入力値を取得
+            let inputMorse = document.getElementById("inputText").value;
+
+            // エラーチェック
+            if (!inputMorse) {
+                alert("モールス信号を入力してください。");
+                return;
+            }
+
+            // 様々なモールス表記を正規化
+            inputMorse = normalizeMorse(inputMorse);
+            
+            // 単語区切りを処理
+            const words = inputMorse.split(' / ');
+            let result = '';
+            
+            for (const word of words) {
+                const letters = word.split(' ');
+                for (const letter of letters) {
+                    if (letter === '') continue;
+                    
+                    // 正規化されたモールス信号をキーとして検索
+                    let found = false;
+                    for (const [morse, char] of Object.entries(reverseMorseTable)) {
+                        if (morse === letter) {
+                            result += char;
+                            found = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!found) {
+                        result += '?';
+                    }
+                }
+                result += ' ';
+            }
+
+            // 結果を表示
+            document.getElementById("result").value = result.trim();
+        }
+
+        function normalizeMorse(morse) {
+            // 様々なモールス表記を標準形式に変換
+            return morse
+                .replace(/[\.0]/g, '・')  // . や 0 を ・ に変換
+                .replace(/[\-_12]/g, 'ー') // - _ 1 2 を ー に変換
+                .replace(/\s+/g, ' ')     // 連続する空白を単一の空白に変換
+                .trim();
+        }
+
+        function copyResult() {
+            const resultTextarea = document.getElementById("result");
+            resultTextarea.select();
+            document.execCommand("copy");
+            alert("結果をコピーしました。");
+        }
+
+        function clearTexts() {
+            document.getElementById("inputText").value = "";
+            document.getElementById("result").value = "";
+        }
+    </script>
+</body>
+</html>
